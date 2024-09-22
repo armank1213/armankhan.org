@@ -2,26 +2,20 @@ import { Redis } from "@upstash/redis";
 import { NextRequest, NextResponse } from "next/server";
 
 const redis = Redis.fromEnv();
-export const config = {
-  runtime: "edge",
-};
+export const runtime = "edge";
 
-export default async function incr(req: NextRequest): Promise<NextResponse> {
-  if (req.method !== "POST") {
-    return new NextResponse("use POST", { status: 405 });
-  }
+export async function POST(req: NextRequest): Promise<NextResponse> {
   if (req.headers.get("Content-Type") !== "application/json") {
-    return new NextResponse("must be json", { status: 400 });
+    return NextResponse.json({ error: "Must be JSON" }, { status: 400 });
   }
 
   const body = await req.json();
-  let slug: string | undefined = undefined;
-  if ("slug" in body) {
-    slug = body.slug;
-  }
+  const slug = body.slug;
+
   if (!slug) {
-    return new NextResponse("Slug not found", { status: 400 });
+    return NextResponse.json({ error: "Slug not found" }, { status: 400 });
   }
+
   const ip = req.ip;
   if (ip) {
     // Hash the IP in order to not store it directly in your db.
@@ -39,9 +33,10 @@ export default async function incr(req: NextRequest): Promise<NextResponse> {
       ex: 24 * 60 * 60,
     });
     if (!isNew) {
-      new NextResponse(null, { status: 202 });
+      return NextResponse.json(null, { status: 202 });
     }
   }
+
   await redis.incr(["pageviews", "projects", slug].join(":"));
-  return new NextResponse(null, { status: 202 });
+  return NextResponse.json(null, { status: 202 });
 }
