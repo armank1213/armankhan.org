@@ -7,9 +7,9 @@ import { Card } from "../components/card";
 const socials = [
 	{
 		icon: <Mail size={20} />,
-		href: "mailto:dev@armankhan.org",
+		href: "mailto:armank1006@gmail.com",
 		label: "Email",
-		handle: "dev@armankhan.org",
+		handle: "armank1006@gmail.com",
 	},
 	{
 		icon: <Github size={20} />,
