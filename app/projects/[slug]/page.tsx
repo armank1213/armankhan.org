@@ -1,13 +1,21 @@
 import { notFound } from "next/navigation";
 import { allProjects } from "contentlayer/generated";
 import { Mdx } from "@/app/components/mdx";
+import { Redis } from "@upstash/redis";
+import { Eye } from "lucide-react";
 
-export default function ProjectPage({ params }: { params: { slug: string } }) {
+const redis = Redis.fromEnv();
+
+export const revalidate = 0;
+
+export default async function ProjectPage({ params }: { params: { slug: string } }) {
   const project = allProjects.find((project) => project.slug === params.slug);
 
   if (!project) {
     notFound();
   }
+
+  const views = await redis.incr(["pageviews", "projects", params.slug].join(":"));
 
   return (
     <div className="bg-zinc-50 min-h-screen">
@@ -15,6 +23,10 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
         <div className="space-y-6">
           <h1 className="text-3xl font-bold md:text-4xl">{project.title}</h1>
           <p className="text-zinc-600">{project.description}</p>
+          <div className="flex items-center text-zinc-500 text-sm">
+            <Eye className="w-4 h-4 mr-1" />
+            {Intl.NumberFormat("en-US", { notation: "compact" }).format(views)} views
+          </div>
         </div>
         {project.body.code ? (
           <Mdx code={project.body.code} />
