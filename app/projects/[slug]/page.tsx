@@ -1,48 +1,33 @@
 import { notFound } from "next/navigation";
 import { allProjects } from "contentlayer/generated";
 import { Mdx } from "@/app/components/mdx";
-import { Header } from "./header";
-import "./mdx.css";
-import { ReportView } from "./view";
-import { Redis } from "@upstash/redis";
 
-export const revalidate = 60;
-
-type Props = {
-  params: {
-    slug: string;
-  };
-};
-
-const redis = Redis.fromEnv();
-
-export async function generateStaticParams(): Promise<Props["params"][]> {
-  return allProjects
-    .filter((p) => p.published)
-    .map((p) => ({
-      slug: p.slug,
-    }));
-}
-
-export default async function PostPage({ params }: Props) {
-  const slug = params?.slug;
-  const project = allProjects.find((project) => project.slug === slug);
+export default function ProjectPage({ params }: { params: { slug: string } }) {
+  const project = allProjects.find((project) => project.slug === params.slug);
 
   if (!project) {
     notFound();
   }
 
-  const views =
-    (await redis.get<number>(["pageviews", "projects", slug].join(":"))) ?? 0;
-
   return (
     <div className="bg-zinc-50 min-h-screen">
-      <Header project={project} views={views} />
-      <ReportView slug={project.slug} />
-
-      <article className="px-4 py-12 mx-auto prose prose-zinc prose-quoteless">
-        <Mdx code={project.body.code} />
+      <article className="max-w-2xl px-6 py-24 mx-auto space-y-8">
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold md:text-4xl">{project.title}</h1>
+          <p className="text-zinc-600">{project.description}</p>
+        </div>
+        {project.body.code ? (
+          <Mdx code={project.body.code} />
+        ) : (
+          <p>Error: No MDX content available</p>
+        )}
       </article>
     </div>
   );
+}
+
+export async function generateStaticParams() {
+  return allProjects.map((project) => ({
+    slug: project.slug,
+  }));
 }
