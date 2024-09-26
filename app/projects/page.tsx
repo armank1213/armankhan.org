@@ -1,6 +1,6 @@
 import Link from "next/link";
 import React from "react";
-import { allProjects, Project } from "contentlayer/generated";
+import * as ContentLayer from "contentlayer/generated";
 import { Navigation } from "../components/nav";
 import { Article } from "./article";
 import { Redis } from "@upstash/redis";
@@ -14,29 +14,29 @@ const redis = Redis.fromEnv();
 export const revalidate = 0;
 
 export default async function ProjectsPage() {
-  console.log("All projects:", allProjects);
+  console.log("All projects:", ContentLayer.allProjects);
 
   const views = (
     await redis.mget<number[]>(
-      ...allProjects.map((p) => ["pageviews", "projects", p.slug].join(":"))
+      ...ContentLayer.allProjects.map((p) => ["pageviews", "projects", p.slug].join(":"))
     )
   ).reduce((acc, v, i) => {
-    acc[allProjects[i].slug] = v ?? 0;
+    acc[ContentLayer.allProjects[i].slug] = v ?? 0;
     return acc;
   }, {} as Record<string, number>);
 
-  const sorted = allProjects
-    .filter((p: Project) => {
+  const sorted = ContentLayer.allProjects
+    .filter((p: ContentLayer.Project) => {
       console.log(`Project ${p.slug}: published = ${p.published}`);
       return p.published;
     })
-    .sort((a: Project, b: Project) => {
+    .sort((a: ContentLayer.Project, b: ContentLayer.Project) => {
       const dateA = b.date ? new Date(b.date).getTime() : 0;
       const dateB = a.date ? new Date(a.date).getTime() : 0;
       return dateA - dateB;
     });
 
-  console.log("Sorted projects:", sorted.map((p: Project) => p.slug));
+  console.log("Sorted projects:", sorted.map((p: ContentLayer.Project) => p.slug));
 
   return (
     <div className="relative pb-16">
@@ -58,7 +58,7 @@ export default async function ProjectsPage() {
           <div className="grid grid-cols-1 gap-4">
             {sorted
               .filter((_, i) => i % 3 === 0)
-              .map((project: Project) => (
+              .map((project: ContentLayer.Project) => (
                 <Card key={project.slug}>
                   <CardContent>
                     <Article project={project} views={views[project.slug] ?? 0} />
@@ -69,7 +69,7 @@ export default async function ProjectsPage() {
           <div className="grid grid-cols-1 gap-4">
             {sorted
               .filter((_, i) => i % 3 === 1)
-              .map((project: Project) => (
+              .map((project: ContentLayer.Project) => (
                 <Card key={project.slug}>
                   <CardContent>
                     <Article project={project} views={views[project.slug] ?? 0} />
@@ -80,7 +80,7 @@ export default async function ProjectsPage() {
           <div className="grid grid-cols-1 gap-4">
             {sorted
               .filter((_, i) => i % 3 === 2)
-              .map((project: Project) => (
+              .map((project: ContentLayer.Project) => (
                 <Card key={project.slug}>
                   <CardContent>
                     <Article project={project} views={views[project.slug] ?? 0} />
